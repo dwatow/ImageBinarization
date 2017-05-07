@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style media="screen">
+      body {
+        margin: 0;
+        position: relative;
+      }
+
+      #draw {
+        /*border: 1px solid gray;*/
+      }
+
+      img,
+      canvas {
+        /*position: absolute;
+        top: 0;
+        left: 0;*/
+        display: inline-block;
+        border: 1px black solid;
+        margin: 10px;
+        /*visibility: hidden;*/
+        width: 500px;
+      }
+
+      .report,
+      .input {
+        display: inline-block;
+        width: 500px;
+        font-size: 2rem;
+        padding: 5px;
+      }
+
+      .input input {
+        font-size: 2rem;
+        width: 100%;
+      }
+
+    </style>
+  </head>
+  <body>
+    <img src="" alt="">
+    <canvas id="draw"></canvas>
+    <div class="input">
+      <div>
+        <label for="fileName">檔名</label><input id="fileName" type="text" value="6.5kv-500-3.jpg">
+      </div>
+      <div>
+        <label for="threshold">演算法閥值</label><input id="threshold" type="text" value="150">
+      </div>
+    </div>
+    <div class="report">
+      <div>
+        白色: <span class="countW">0</span>%
+      </div>
+      <div>
+        黑色: <span class="countB">0</span>%
+      </div>
+    </div>
+    <script type="text/javascript">
+
+
+    const file_name = document.querySelector('#fileName');
+    const threshold_input = document.querySelector('#threshold');
+    const img = document.querySelector('img');
+
+    function imageChange() {
+      img.src=`./${file_name.value}`;
+    }
+
+    function main() {
+
+      const canvas = document.querySelector("#draw");
+      var ctx = canvas.getContext("2d");
+
+
+
+      const height = img.height;
+      const width = img.width;
+      canvas.width = width;
+      canvas.height = height;
+
+
+      ctx.drawImage(img, 0, 0, width, height);
+      let image = ctx.getImageData(0, 0, width, height);
+      threshold = threshold_input.value;
+
+      image = imageProcess(image);
+      let [countW, countB] = countWB(image);
+      showReport(countW, countB);
+      console.log(countW/(countW+countB)*100, countB/(countW+countB)*100);
+
+      ctx.putImageData(image, 0, 0);
+    }
+
+
+
+    function imageProcess(frame) {
+      for(let i = 0; i < frame.data.length; i += 4) {
+        let sum
+          = frame.data[i + 0] +
+            frame.data[i + 1] +
+            frame.data[i + 2];
+        let color = sum / 3;
+        if (color > threshold) {
+          color = 255;
+        }
+        else {
+          color = 0;
+        }
+        frame.data[i + 0] = color; // RED
+        frame.data[i + 1] = color; // GREEN
+        frame.data[i + 2] = color; // Blue
+      }
+      return frame;
+    }
+
+    function countWB(frame) {
+      let countW = 0;
+      let countB = 0;
+      for(let i = 0; i < frame.data.length; i += 4) {
+        if (frame.data[i + 0] > threshold) {
+          countW += 1;
+        }
+        else {
+          countB += 1;
+        }
+      }
+
+      return [countW, countB];
+    }
+
+    function showReport(totalW, totalB) {
+      const total = totalW + totalB;
+      // console.log('showReport:', totalW, totalB);
+      const countW = document.querySelector('.countW');
+      countW.textContent = ((totalW/total)*100).toFixed(2);
+      const countB = document.querySelector('.countB');
+      countB.textContent = ((totalB/total)*100).toFixed(2);
+    }
+
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => input.addEventListener('keyup', imageChange));
+    img.addEventListener('load', main);
+    window.onload = imageChange;
+
+    </script>
+  </body>
+</html>
