@@ -61,55 +61,37 @@
     </div>
     <script type="text/javascript">
 
-
-    const file_name = document.querySelector('#fileName');
-    const threshold_input = document.querySelector('#threshold');
-    const img = document.querySelector('img');
-
     function imageChange() {
+      const file_name = document.querySelector('#fileName');
       img.src=`./${file_name.value}`;
     }
 
-    function main() {
-
-      const canvas = document.querySelector("#draw");
-      var ctx = canvas.getContext("2d");
-
-
-
-      const height = img.height;
-      const width = img.width;
-      canvas.width = width;
-      canvas.height = height;
-
-
-      ctx.drawImage(img, 0, 0, width, height);
-      let image = ctx.getImageData(0, 0, width, height);
-      threshold = threshold_input.value;
-
-      image = imageProcess(image);
-      let [countW, countB] = countWB(image);
-      showReport(countW, countB);
-      console.log(countW/(countW+countB)*100, countB/(countW+countB)*100);
-
-      ctx.putImageData(image, 0, 0);
+    function openImage(img_tag, canvas_id) {
+      const img = document.querySelector(img_tag);
+    	const canvas = document.querySelector(canvas_id);
+    	var ctx = canvas.getContext("2d");
+    	const height = img.height;
+    	const width = img.width;
+    	canvas.width = width;
+    	canvas.height = height;
+    	ctx.drawImage(img, 0, 0, width, height);
+    	return ctx.getImageData(0, 0, width, height);
     }
 
-
-
     function imageProcess(frame) {
+      const threshold_input = document.querySelector('#threshold');
+      threshold = threshold_input.value;
       for(let i = 0; i < frame.data.length; i += 4) {
-        let sum
-          = frame.data[i + 0] +
-            frame.data[i + 1] +
-            frame.data[i + 2];
+        let sum = frame.data[i + 0] + frame.data[i + 1] + frame.data[i + 2];
         let color = sum / 3;
-        if (color > threshold) {
+
+        if(color > threshold) {
           color = 255;
         }
         else {
           color = 0;
         }
+
         frame.data[i + 0] = color; // RED
         frame.data[i + 1] = color; // GREEN
         frame.data[i + 2] = color; // Blue
@@ -141,10 +123,30 @@
       countB.textContent = ((totalB/total)*100).toFixed(2);
     }
 
+    function report(image) {
+      let [countW, countB] = countWB(image);
+      showReport(countW, countB);
+      console.log(countW / (countW + countB) * 100, countB / (countW + countB) * 100);
+    }
+
+    function drawImage(image, canvas_id) {
+      const canvas = document.querySelector(canvas_id);
+    	var ctx = canvas.getContext("2d");
+      ctx.putImageData(image, 0, 0);
+    }
+
+    function main() {
+    	let image = openImage("img", "#draw");
+    	image = imageProcess(image);
+      report(image);
+      drawImage(image, "#draw");
+    }
+
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => input.addEventListener('keyup', imageChange));
+    const img = document.querySelector('img');
     img.addEventListener('load', main);
-    window.onload = imageChange;
+    window.addEventListener('onload', imageChange);
 
     </script>
   </body>
